@@ -60,13 +60,11 @@ Raw rows are in `results/episodes.csv` (`episode_id` ties a row to a scenario, s
 <!-- RESULTS_START -->
 | Criterion | Value | Threshold | Passed |
 |---|---:|---:|---|
-| Collision rate (best learned policy) | 18.0000 | <= 8.0 | False |
-| Mean speed vs. rule-based expert | 97.2516 | >= 95.0 | False |
+| Collision rate (best learned policy) | 1.5000 | <= 8.0 | True |
+| Mean speed vs. rule-based expert | 99.1409 | >= 95.0 | True |
 | BC-initialized PPO vs. PPO from scratch | 0.0000 | <= 60.0 | True |
-| merge-v0 collision rate (best learned policy) | 0.5000 | <= 10.0 | True |
-| Test coverage of src/ | 87.7283 | >= 65.0 | True |
-
-These criteria did not pass on the from-scratch run: Collision rate (best learned policy); Mean speed vs. rule-based expert. The values above are the measured ones. Thresholds were not changed, and test seeds were not used to tune.
+| merge-v0 collision rate (best learned policy) | 0.0000 | <= 10.0 | True |
+| Test coverage of src/ | 87.6552 | >= 65.0 | True |
 
 Held-out test metrics (time-weighted mean speed, collision percent):
 
@@ -74,23 +72,23 @@ Held-out test metrics (time-weighted mean speed, collision percent):
 |---|---|---:|---:|---:|---:|
 | highway | idm_mobil | 0.50 | 25.57 | 1.268 | 2.677 |
 | highway | idm_lane_keep | 0.00 | 23.52 | 1.898 | 1.836 |
-| highway | bc_mlp | 30.50 | 24.75 | 0.519 | 1.808 |
-| highway | bc_attention | 17.00 | 24.88 | 0.257 | 2.073 |
+| highway | bc_mlp | 1.50 | 25.32 | 1.328 | 2.567 |
+| highway | bc_attention | 1.50 | 25.35 | 1.562 | 2.578 |
 | highway | ppo_mlp_scratch | 33.00 | 24.75 | 0.526 | 1.745 |
-| highway | ppo_mlp_bc | 33.50 | 24.75 | 0.587 | 1.730 |
+| highway | ppo_mlp_bc | 2.00 | 25.15 | 1.285 | 2.465 |
 | highway | ppo_attention_scratch | 69.00 | 29.04 | 2.935 | 2.324 |
-| highway | ppo_attention_bc | 18.00 | 24.87 | 0.236 | 2.076 |
+| highway | ppo_attention_bc | 1.50 | 25.24 | 1.392 | 2.528 |
 | merge | idm_mobil | 0.00 | 19.63 | 0.804 | 10.779 |
 | merge | idm_lane_keep | 0.00 | 19.17 | 0.844 | 10.628 |
-| merge | bc_mlp | 0.00 | 16.33 | 0.519 | 10.525 |
-| merge | bc_attention | 0.00 | 18.83 | 0.320 | 10.508 |
+| merge | bc_mlp | 0.00 | 19.65 | 0.746 | 10.786 |
+| merge | bc_attention | 0.00 | 19.64 | 0.725 | 10.783 |
 | merge | ppo_mlp_scratch | 0.00 | 5.62 | 0.270 | 6.917 |
-| merge | ppo_mlp_bc | 0.50 | 22.54 | 0.317 | 11.014 |
+| merge | ppo_mlp_bc | 0.00 | 19.67 | 0.629 | 10.673 |
 | merge | ppo_attention_scratch | 0.00 | 5.62 | 0.270 | 6.917 |
-| merge | ppo_attention_bc | 0.00 | 19.39 | 0.254 | 10.491 |
+| merge | ppo_attention_bc | 0.00 | 22.56 | 0.412 | 11.140 |
 <!-- RESULTS_END -->
 
-Plots: `results/learning_curves.png`, `results/collision_rates.png`, `results/speed_comparison.png`. Collision GIFs are under `results/collisions/`.
+Plots: `results/learning_curves.png`, `results/collision_rates.png`, `results/speed_comparison.png`. Collision GIFs are under `results/collisions/`. They use pygame's normal video driver. A dummy video driver writes black frames.
 
 ## Dataset and license
 

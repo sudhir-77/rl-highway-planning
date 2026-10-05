@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import warnings
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import gymnasium as gym
