@@ -64,7 +64,7 @@ Raw rows are in `results/episodes.csv` (`episode_id` ties a row to a scenario, s
 | Mean speed vs. rule-based expert | 99.1409 | >= 95.0 | True |
 | BC-initialized PPO vs. PPO from scratch | 0.0000 | <= 60.0 | True |
 | merge-v0 collision rate (best learned policy) | 0.0000 | <= 10.0 | True |
-| Test coverage of src/ | 87.6552 | >= 65.0 | True |
+| Test coverage of src/ | 86.6429 | >= 65.0 | True |
 
 Held-out test metrics (time-weighted mean speed, collision percent):
 
@@ -74,18 +74,22 @@ Held-out test metrics (time-weighted mean speed, collision percent):
 | highway | idm_lane_keep | 0.00 | 23.52 | 1.898 | 1.836 |
 | highway | bc_mlp | 1.50 | 25.32 | 1.328 | 2.567 |
 | highway | bc_attention | 1.50 | 25.35 | 1.562 | 2.578 |
-| highway | ppo_mlp_scratch | 33.00 | 24.75 | 0.526 | 1.745 |
-| highway | ppo_mlp_bc | 2.00 | 25.15 | 1.285 | 2.465 |
-| highway | ppo_attention_scratch | 69.00 | 29.04 | 2.935 | 2.324 |
-| highway | ppo_attention_bc | 1.50 | 25.24 | 1.392 | 2.528 |
+| highway | ppo_mlp_scratch | 0.00 | 18.95 | 0.415 | 0.661 |
+| highway | ppo_mlp_bc | 4.00 | 25.08 | 0.466 | 2.418 |
+| highway | ppo_attention_scratch | 0.00 | 5.32 | 0.404 | 0.026 |
+| highway | ppo_attention_bc | 1.50 | 23.44 | 0.794 | 2.009 |
 | merge | idm_mobil | 0.00 | 19.63 | 0.804 | 10.779 |
 | merge | idm_lane_keep | 0.00 | 19.17 | 0.844 | 10.628 |
 | merge | bc_mlp | 0.00 | 19.65 | 0.746 | 10.786 |
 | merge | bc_attention | 0.00 | 19.64 | 0.725 | 10.783 |
 | merge | ppo_mlp_scratch | 0.00 | 5.62 | 0.270 | 6.917 |
-| merge | ppo_mlp_bc | 0.00 | 19.67 | 0.629 | 10.673 |
+| merge | ppo_mlp_bc | 0.00 | 19.81 | 0.635 | 10.675 |
 | merge | ppo_attention_scratch | 0.00 | 5.62 | 0.270 | 6.917 |
-| merge | ppo_attention_bc | 0.00 | 22.56 | 0.412 | 11.140 |
+| merge | ppo_attention_bc | 0.00 | 20.92 | 0.356 | 11.482 |
+
+Each PPO run, from scratch and from behavior cloning, trains for 50176 environment steps. Held-out collision rates for the from-scratch runs are highway ppo_mlp_scratch 0.0%, highway ppo_attention_scratch 0.0%, merge ppo_mlp_scratch 0.0%, merge ppo_attention_scratch 0.0%. Their mean speeds are highway ppo_mlp_scratch 18.95 m/s, highway ppo_attention_scratch 5.32 m/s, merge ppo_mlp_scratch 5.62 m/s, merge ppo_attention_scratch 5.62 m/s. The sample-efficiency percentage is the share of that shared budget at which BC-initialized PPO first matches the scratch run's final learning-curve return. A low scratch return makes that percentage small, including when a scratch policy avoids collisions by driving well below the expert speed.
+
+The reported policy for each scenario was chosen on validation episodes: highway bc_attention, merge ppo_mlp_bc.
 <!-- RESULTS_END -->
 
 Plots: `results/learning_curves.png`, `results/collision_rates.png`, `results/speed_comparison.png`. Collision GIFs are under `results/collisions/`. They use pygame's normal video driver. A dummy video driver writes black frames.
@@ -96,7 +100,7 @@ Rollouts are generated locally with [highway-env](https://github.com/Farama-Foun
 
 ## Limitations
 
-The action space is five meta-actions, not continuous steering. The horizon is 12 seconds. Each PPO arm has 50,176 environment steps, the same budget for behavior-cloning initialization and training from scratch. That budget supports the sample-efficiency comparison. It is not a claim that scratch PPO has converged. The results table states the measured from-scratch collision rates. `merge-v0` is the environment named in the spec. The attention block looks at the vehicles present at one time step. It is not a temporal transformer and it is not a graph net over the full road. Nothing here is a production driving stack or a real-vehicle result.
+The action space is five meta-actions, not continuous steering. The horizon is 12 seconds. Each PPO arm has 50,176 environment steps, the same budget for behavior-cloning initialization and training from scratch. That budget supports the sample-efficiency comparison. It is not a claim that scratch PPO has converged. The results table states the measured from-scratch collision rates and speeds. On this run several scratch policies stay collision-free while driving slower than the expert, so matching their final return at 0% of the budget is not evidence that scratch has learned the expert's speed. `merge-v0` is the environment named in the spec. The attention block looks at the vehicles present at one time step. It is not a temporal transformer and it is not a graph net over the full road. Nothing here is a production driving stack or a real-vehicle result.
 
 ## Tests
 

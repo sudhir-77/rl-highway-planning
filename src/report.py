@@ -113,17 +113,30 @@ def results_markdown(payload: dict) -> str:
     budget = payload["metrics"].get("ppo_budget", {})
     steps = budget.get("timesteps_per_run")
     scratch = [row for row in table if str(row["policy"]).endswith("_scratch")]
+    selected = payload["metrics"].get("selected_policy", {})
     if steps is not None and scratch:
         rates = ", ".join(
             f"{row['scenario']} {row['policy']} {row['collision_pct']:.1f}%" for row in scratch
+        )
+        speeds = ", ".join(
+            f"{row['scenario']} {row['policy']} {row['mean_speed']:.2f} m/s" for row in scratch
         )
         lines.append("")
         lines.append(
             f"Each PPO run, from scratch and from behavior cloning, trains for {int(steps)} environment steps. "
             f"Held-out collision rates for the from-scratch runs are {rates}. "
+            f"Their mean speeds are {speeds}. "
             "The sample-efficiency percentage is the share of that shared budget at which BC-initialized PPO "
-            "first matches the scratch run's final learning-curve return. A low scratch return makes that "
-            "percentage small even when scratch driving is still poor."
+            "first matches the scratch run's final learning-curve return. "
+            "A low scratch return makes that percentage small, including when a scratch policy avoids "
+            "collisions by driving well below the expert speed."
+        )
+    if selected:
+        lines.append("")
+        lines.append(
+            "The reported policy for each scenario was chosen on validation episodes: "
+            + ", ".join(f"{scenario} {policy}" for scenario, policy in selected.items())
+            + "."
         )
     return "\n".join(lines) + "\n"
 

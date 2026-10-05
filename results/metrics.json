@@ -35,7 +35,7 @@
     },
     {
       "name": "Test coverage of src/",
-      "value": 87.65522279035793,
+      "value": 86.64285714285714,
       "op": ">=",
       "threshold": 65.0,
       "threshold_high": null,
@@ -45,7 +45,7 @@
   "metrics": {
     "selected_policy": {
       "highway": "bc_attention",
-      "merge": "ppo_attention_bc"
+      "merge": "ppo_mlp_bc"
     },
     "test_table": [
       {
@@ -83,34 +83,34 @@
       {
         "scenario": "highway",
         "policy": "ppo_mlp_scratch",
-        "collision_pct": 33.0,
-        "mean_speed": 24.751913493182887,
-        "mean_abs_jerk": 0.526189365079365,
-        "mean_return": 1.745
+        "collision_pct": 0.0,
+        "mean_speed": 18.952932349833414,
+        "mean_abs_jerk": 0.4148092487370122,
+        "mean_return": 0.6612389860682814
       },
       {
         "scenario": "highway",
         "policy": "ppo_mlp_bc",
-        "collision_pct": 2.0,
-        "mean_speed": 25.15381732683163,
-        "mean_abs_jerk": 1.2848916480095547,
-        "mean_return": 2.465077485546888
+        "collision_pct": 4.0,
+        "mean_speed": 25.078612096977817,
+        "mean_abs_jerk": 0.46579498843248246,
+        "mean_return": 2.4176764598158753
       },
       {
         "scenario": "highway",
         "policy": "ppo_attention_scratch",
-        "collision_pct": 69.0,
-        "mean_speed": 29.04495076004673,
-        "mean_abs_jerk": 2.9348263019680623,
-        "mean_return": 2.3237260921801055
+        "collision_pct": 0.0,
+        "mean_speed": 5.3159557262095385,
+        "mean_abs_jerk": 0.40449587327684466,
+        "mean_return": 0.0263374485596708
       },
       {
         "scenario": "highway",
         "policy": "ppo_attention_bc",
         "collision_pct": 1.5,
-        "mean_speed": 25.23818376177244,
-        "mean_abs_jerk": 1.3921467591727577,
-        "mean_return": 2.5278008504581746
+        "mean_speed": 23.443856429239315,
+        "mean_abs_jerk": 0.79408098173253,
+        "mean_return": 2.0087408608661934
       },
       {
         "scenario": "merge",
@@ -156,9 +156,9 @@
         "scenario": "merge",
         "policy": "ppo_mlp_bc",
         "collision_pct": 0.0,
-        "mean_speed": 19.673912099217514,
-        "mean_abs_jerk": 0.6285966765559737,
-        "mean_return": 10.673031383045702
+        "mean_speed": 19.814246527503133,
+        "mean_abs_jerk": 0.6354658117887693,
+        "mean_return": 10.675055201241637
       },
       {
         "scenario": "merge",
@@ -172,9 +172,9 @@
         "scenario": "merge",
         "policy": "ppo_attention_bc",
         "collision_pct": 0.0,
-        "mean_speed": 22.555310628599706,
-        "mean_abs_jerk": 0.4119475656260468,
-        "mean_return": 11.139519784908094
+        "mean_speed": 20.92429239777876,
+        "mean_abs_jerk": 0.35626348771380556,
+        "mean_return": 11.481643551574471
       }
     ],
     "validation_table": [
@@ -209,30 +209,30 @@
       {
         "scenario": "highway",
         "policy": "ppo_mlp_scratch",
-        "collision_pct": 30.0,
-        "mean_speed": 24.81780885780886,
-        "mean_return": 1.7950000000000004
+        "collision_pct": 0.0,
+        "mean_speed": 18.79591232288198,
+        "mean_return": 0.5508170189834749
       },
       {
         "scenario": "highway",
         "policy": "ppo_mlp_bc",
         "collision_pct": 0.0,
-        "mean_speed": 25.005665570620042,
-        "mean_return": 2.4214364855790604
+        "mean_speed": 24.719401883953545,
+        "mean_return": 2.3075907916519034
       },
       {
         "scenario": "highway",
         "policy": "ppo_attention_scratch",
-        "collision_pct": 77.5,
-        "mean_speed": 29.073485324016097,
-        "mean_return": 2.1747369596457737
+        "collision_pct": 0.0,
+        "mean_speed": 5.3159557262095385,
+        "mean_return": 0.026337448559670806
       },
       {
         "scenario": "highway",
         "policy": "ppo_attention_bc",
         "collision_pct": 2.5,
-        "mean_speed": 25.10205789001026,
-        "mean_return": 2.4397940050432565
+        "mean_speed": 23.245228029685478,
+        "mean_return": 1.8145592273589437
       },
       {
         "scenario": "merge",
@@ -273,8 +273,8 @@
         "scenario": "merge",
         "policy": "ppo_mlp_bc",
         "collision_pct": 0.0,
-        "mean_speed": 20.414538823265303,
-        "mean_return": 10.780381860404944
+        "mean_speed": 20.835184595072555,
+        "mean_return": 10.829484657362618
       },
       {
         "scenario": "merge",
@@ -287,8 +287,8 @@
         "scenario": "merge",
         "policy": "ppo_attention_bc",
         "collision_pct": 0.0,
-        "mean_speed": 23.768736309682815,
-        "mean_return": 11.239038140445206
+        "mean_speed": 20.55539549691007,
+        "mean_return": 11.729710590255083
       }
     ],
     "sample_efficiency_step_pct": {
@@ -298,6 +298,23 @@
       "merge_attention": 0.0
     },
     "highway_attention_step_pct": 0.0,
+    "ppo_budget": {
+      "timesteps_per_run": 50176,
+      "n_envs": 4,
+      "n_steps": 256,
+      "policy_hz": 1,
+      "simulation_hz": 5,
+      "final_timesteps": {
+        "highway/mlp/scratch": 50176,
+        "highway/mlp/bc": 50176,
+        "highway/attention/scratch": 50176,
+        "highway/attention/bc": 50176,
+        "merge/mlp/scratch": 50176,
+        "merge/mlp/bc": 50176,
+        "merge/attention/scratch": 50176,
+        "merge/attention/bc": 50176
+      }
+    },
     "speed_criterion": {
       "speed_pct_of_expert": 99.14094036988702,
       "learned_collision_pct": 1.5,
@@ -942,7 +959,7 @@
     "gpu": null,
     "python": "3.12.10",
     "os": "Windows-11-10.0.26200-SP0",
-    "peak_rss_gb": 0.7254
+    "peak_rss_gb": 1.3457
   },
-  "runtime_seconds": 584.522
+  "runtime_seconds": 2289.044
 }

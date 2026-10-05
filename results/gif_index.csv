@@ -1,4 +1,4 @@
 gif,scenario,policy,seed,failure_mode,episode_id,frames
 collision_01.gif,highway,bc_attention,200022,lane_change,highway:test:bc_attention:200022,7
-collision_02.gif,highway,ppo_attention_scratch,200000,rear_end,highway:test:ppo_attention_scratch:200000,6
-collision_03.gif,highway,ppo_attention_bc,200022,lane_change,highway:test:ppo_attention_bc:200022,7
+collision_02.gif,highway,ppo_mlp_bc,200022,lane_change,highway:test:ppo_mlp_bc:200022,5
+collision_03.gif,highway,ppo_attention_bc,200043,lane_change,highway:test:ppo_attention_bc:200043,5

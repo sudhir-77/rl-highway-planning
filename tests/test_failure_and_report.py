@@ -64,7 +64,30 @@ def test_success_criteria_pass_and_fail():
     by_name = {row["name"]: row for row in mixed}
     assert by_name["Mean speed vs. rule-based expert"]["passed"] is False
     assert by_name["Test coverage of src/"]["passed"] is False
-    assert "7.0000" in results_markdown({"success_criteria": passed, "metrics": {"test_table": []}})
+    text = results_markdown({"success_criteria": passed, "metrics": {"test_table": []}})
+    assert "7.0000" in text
+    detailed = results_markdown(
+        {
+            "success_criteria": passed,
+            "metrics": {
+                "test_table": [
+                    {
+                        "scenario": "highway",
+                        "policy": "ppo_mlp_scratch",
+                        "collision_pct": 0.0,
+                        "mean_speed": 5.5,
+                        "mean_abs_jerk": 0.2,
+                        "mean_return": 1.0,
+                    }
+                ],
+                "ppo_budget": {"timesteps_per_run": 50176},
+                "selected_policy": {"highway": "bc_attention"},
+            },
+        }
+    )
+    assert "50176" in detailed
+    assert "5.50 m/s" in detailed
+    assert "bc_attention" in detailed
 
 
 def test_resume_uses_only_supplied_numbers(tmp_path):
