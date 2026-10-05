@@ -59,10 +59,10 @@ class Settings:
     val_count: int = 40
     test_count: int = 200
     curve_count: int = 8
-    bc_epochs: int = 8
+    bc_epochs: int = 25
     bc_batch: int = 256
-    bc_lr: float = 1e-3
-    bc_patience: int = 3
+    bc_lr: float = 1e-2
+    bc_patience: int = 6
     ppo_timesteps: int = 2048
     ppo_n_steps: int = 256
     ppo_batch: int = 64
@@ -199,7 +199,7 @@ class Settings:
             "bc_batch": self.bc_batch,
             "bc_lr": self.bc_lr,
             "bc_patience": self.bc_patience,
-            "bc_loss": "lane_change_sqrt_cap2.5",
+            "bc_loss": "rare_sqrt_cap2",
             "ppo_timesteps": self.ppo_timesteps,
             "ppo_n_steps": self.ppo_n_steps,
             "ppo_batch": self.ppo_batch,

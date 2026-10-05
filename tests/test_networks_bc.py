@@ -34,13 +34,18 @@ def test_attention_ignores_padding_and_permutes_other_vehicles():
     assert flat(obs).shape == (2, 64)
 
 
-def test_class_weights_do_not_boost_braking():
+def test_class_weights_cap_rare_actions_and_ignore_absent_ones():
+    # Braking is the majority here, so it is not upweighted. The rare lane change is.
     actions = np.array([4, 4, 4, 4, 1, 1, 0], dtype=np.int64)
     weights = action_class_weights(actions)
     assert weights[4] == weights[1]
     assert weights[0] > weights[4]
     assert weights[2] == 0.0
     assert weights[3] == 0.0
+    rare_brake = np.array([1] * 90 + [4] * 10, dtype=np.int64)
+    rare_weights = action_class_weights(rare_brake)
+    assert rare_weights[4] > rare_weights[1]
+    assert rare_weights[4] < 2.0
 
 
 def test_bc_overfits_a_linear_rule_and_early_stops_when_frozen():

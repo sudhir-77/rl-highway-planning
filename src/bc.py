@@ -52,23 +52,23 @@ def _loss(
     return float(total / max(count, 1))
 
 
-def action_class_weights(actions: np.ndarray, n_actions: int = 5) -> np.ndarray:
-    """Weight rare lane-change labels only.
+def action_class_weights(actions: np.ndarray, n_actions: int = 5, cap: float = 2.0) -> np.ndarray:
+    """Mildly upweight uncommon actions, including braking.
 
-    Braking is not upweighted. A large SLOWER weight made the cloned policy
-    brake on ordinary gaps and fall behind the expert's speed.
+    The cap stays at 2. A cap of 8 made the cloned policy brake on ordinary
+    gaps. Unseen actions get weight 0.
     """
     counts = np.bincount(np.asarray(actions, dtype=np.int64), minlength=n_actions).astype(np.float64)
     weights = np.zeros(n_actions, dtype=np.float64)
     present = counts > 0
     weights[present] = 1.0
     total = float(counts.sum())
-    for lane in (0, 2):
-        if counts[lane] <= 0 or total <= 0:
+    for action in range(n_actions):
+        if counts[action] <= 0 or total <= 0:
             continue
-        fraction = float(counts[lane] / total)
-        if fraction < 0.15:
-            weights[lane] = min(2.5, float(np.sqrt(1.0 / max(fraction, 1e-6))))
+        fraction = float(counts[action] / total)
+        if fraction < 0.20:
+            weights[action] = min(float(cap), float(np.sqrt(1.0 / max(fraction, 1e-6))))
     if present.any():
         weights[present] = weights[present] / weights[present].mean()
     return weights

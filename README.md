@@ -45,7 +45,7 @@ The kinematic observation is a matrix of up to 8 vehicles by 5 features: presenc
 - Four other vehicles are spawned on highway-v0. The observation has 8 rows, so the scene fits in the network input, including empty padding rows. merge-v0 does not read `vehicles_count`; it uses the ramp scene shipped with highway-env.
 - Neighbor search follows connected lane segments. That matters on `merge-v0`, where the ramp and the main road are different lane pieces.
 - The expert is highway-env's own IDM and MOBIL, mapped onto `LANE_LEFT`, `IDLE`, `LANE_RIGHT`, `FASTER`, and `SLOWER`. A second baseline is IDM with lane changes disabled.
-- Behavior cloning early-stops on a validation split of expert episodes. Class weights boost rare lane-change labels only. Braking is not upweighted, because that made the cloned policy slower than the expert. The policy that is reported on the test seeds is chosen on a separate block of environment seeds, using collision rate and speed against the validation expert. Test seeds are fixed in `src/config.py` and are not used for collection, training, or that choice.
+- Behavior cloning early-stops on a validation split of expert episodes. Actions that are under 20% of the labels, including braking and lane changes, get a class weight of at most 2. A much larger brake weight made the cloned policy brake on ordinary gaps. The policy that is reported on the test seeds is chosen on a separate block of environment seeds, using collision rate and speed against the validation expert. Test seeds are fixed in `src/config.py` and are not used for collection, training, or that choice.
 - PPO from behavior cloning is compared with PPO from scratch on a third seed block (the learning-curve seeds). The reported step fraction is for the highway ego-attention pair: the first curve point, including step 0, whose mean return reaches the scratch run's final return, divided by the shared step budget.
 - CPU threads are capped at 4. Training checkpoints live under `artifacts/` and can be resumed.
 
@@ -58,7 +58,36 @@ Raw rows are in `results/episodes.csv` (`episode_id` ties a row to a scenario, s
 ## Results
 
 <!-- RESULTS_START -->
-Results are written here by `python run.py`.
+| Criterion | Value | Threshold | Passed |
+|---|---:|---:|---|
+| Collision rate (best learned policy) | 18.0000 | <= 8.0 | False |
+| Mean speed vs. rule-based expert | 97.2516 | >= 95.0 | False |
+| BC-initialized PPO vs. PPO from scratch | 0.0000 | <= 60.0 | True |
+| merge-v0 collision rate (best learned policy) | 0.5000 | <= 10.0 | True |
+| Test coverage of src/ | 87.7283 | >= 65.0 | True |
+
+These criteria did not pass on the from-scratch run: Collision rate (best learned policy); Mean speed vs. rule-based expert. The values above are the measured ones. Thresholds were not changed, and test seeds were not used to tune.
+
+Held-out test metrics (time-weighted mean speed, collision percent):
+
+| Scenario | Policy | Collision % | Mean speed (m/s) | Mean |jerk| | Mean return |
+|---|---|---:|---:|---:|---:|
+| highway | idm_mobil | 0.50 | 25.57 | 1.268 | 2.677 |
+| highway | idm_lane_keep | 0.00 | 23.52 | 1.898 | 1.836 |
+| highway | bc_mlp | 30.50 | 24.75 | 0.519 | 1.808 |
+| highway | bc_attention | 17.00 | 24.88 | 0.257 | 2.073 |
+| highway | ppo_mlp_scratch | 33.00 | 24.75 | 0.526 | 1.745 |
+| highway | ppo_mlp_bc | 33.50 | 24.75 | 0.587 | 1.730 |
+| highway | ppo_attention_scratch | 69.00 | 29.04 | 2.935 | 2.324 |
+| highway | ppo_attention_bc | 18.00 | 24.87 | 0.236 | 2.076 |
+| merge | idm_mobil | 0.00 | 19.63 | 0.804 | 10.779 |
+| merge | idm_lane_keep | 0.00 | 19.17 | 0.844 | 10.628 |
+| merge | bc_mlp | 0.00 | 16.33 | 0.519 | 10.525 |
+| merge | bc_attention | 0.00 | 18.83 | 0.320 | 10.508 |
+| merge | ppo_mlp_scratch | 0.00 | 5.62 | 0.270 | 6.917 |
+| merge | ppo_mlp_bc | 0.50 | 22.54 | 0.317 | 11.014 |
+| merge | ppo_attention_scratch | 0.00 | 5.62 | 0.270 | 6.917 |
+| merge | ppo_attention_bc | 0.00 | 19.39 | 0.254 | 10.491 |
 <!-- RESULTS_END -->
 
 Plots: `results/learning_curves.png`, `results/collision_rates.png`, `results/speed_comparison.png`. Collision GIFs are under `results/collisions/`.
