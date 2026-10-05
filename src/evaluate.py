@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import numpy as np
 
 from src.config import LANE_LEFT, LANE_RIGHT, Settings
@@ -42,12 +44,16 @@ def run_episode(env, seed: int, action_fn, settings: Settings) -> dict:
     if tuple(vehicle.lane_index) != tuple(vehicle.target_lane_index):
         lane_change_recent = True
     failed = bool(crashed or offroad)
+    n_steps = int(len(speeds))
+    sum_speed = float(sum(speeds))
     return {
         "seed": int(seed),
         "crashed": int(failed),
+        "collided": int(failed),
         "offroad": int(offroad),
-        "sum_speed": float(sum(speeds)),
-        "n_steps": int(len(speeds)),
+        "sum_speed": sum_speed,
+        "n_steps": n_steps,
+        "mean_speed": float(sum_speed / n_steps) if n_steps else 0.0,
         "mean_abs_jerk": mean_abs_jerk(speeds, settings.dt),
         "return": float(sum(rewards)),
         "progress_m": float(sum(speeds) * settings.dt),
@@ -98,5 +104,5 @@ def random_action_fn(env, _obs) -> int:
     return available[index]
 
 
-def recent_lane_changes(actions: deque[int]) -> bool:
+def recent_lane_changes(actions: Sequence[int]) -> bool:
     return any(action in (LANE_LEFT, LANE_RIGHT) for action in actions)

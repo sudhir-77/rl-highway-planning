@@ -163,6 +163,7 @@ def _evaluate(scenario: str, split: str, seeds: list[int], fns: dict, settings: 
             for episode in episodes:
                 episode = dict(episode)
                 episode["scenario"] = scenario
+                episode["env"] = scenario
                 episode["policy"] = policy
                 episode["split"] = split
                 episode["episode_id"] = f"{scenario}:{split}:{policy}:{episode['seed']}"
@@ -335,7 +336,9 @@ def run_pipeline(
                                 "architecture": arch,
                                 "init": init,
                                 "timestep": int(point["timestep"]),
+                                "steps": int(point["timestep"]),
                                 "mean_return": float(point["mean_return"]),
+                                "return": float(point["mean_return"]),
                                 "n_seeds": int(point["n_seeds"]),
                             }
                         )
@@ -579,13 +582,16 @@ def _write_episode_artifacts(output_dir, episodes, curve_rows, predictions, data
         [
             "episode_id",
             "scenario",
+            "env",
             "policy",
             "seed",
             "split",
             "crashed",
+            "collided",
             "offroad",
             "sum_speed",
             "n_steps",
+            "mean_speed",
             "mean_abs_jerk",
             "return",
             "progress_m",
@@ -596,7 +602,7 @@ def _write_episode_artifacts(output_dir, episodes, curve_rows, predictions, data
     _write_csv(
         output_dir / "learning_curves.csv",
         curve_rows,
-        ["scenario", "architecture", "init", "timestep", "mean_return", "n_seeds"],
+        ["scenario", "architecture", "init", "timestep", "steps", "mean_return", "return", "n_seeds"],
     )
     _write_csv(
         output_dir / "bc_test_predictions.csv",

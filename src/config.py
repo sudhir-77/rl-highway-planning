@@ -10,11 +10,12 @@ from dataclasses import dataclass
 
 
 FEATURES = ["presence", "x", "y", "vx", "vy"]
-# 1 m/s steps. The expert emits SLOWER/FASTER from an IDM acceleration
-# deadband, and the controller moves the setpoint by one step.
+# 1 m/s grid so IDLE can hold the measured speed. FASTER and SLOWER move
+# several steps at once; a 1 m/s command cannot match an IDM brake.
 TARGET_SPEEDS = list(range(0, 31))
-BRAKE_ACCEL = 1.0
-ACCEL_ACCEL = 0.5
+SPEED_STEP = 5
+BRAKE_ACCEL = 1.5
+ACCEL_ACCEL = 0.8
 # Kinematic columns, then same-lane gap, same-lane range rate, left gap, right gap.
 FEATURE_SCALE = [1.0, 200.0, 20.0, 40.0, 40.0, 1.0, 1.0, 1.0, 1.0]
 
@@ -43,27 +44,28 @@ ENV_IDS = {"highway": "highway-v0", "merge": "merge-v0"}
 class Settings:
     quick: bool
     device: str
-    config_version: int = 5
+    config_version: int = 6
     master_seed: int = 0
-    n_obs_vehicles: int = 10
+    n_obs_vehicles: int = 8
     n_features: int = 9
+    # 5 Hz physics, 1 Hz decisions. Both PPO arms share ppo_timesteps.
     sim_freq: int = 5
-    policy_freq: int = 5
-    duration_s: int = 20
-    lanes: int = 4
-    spawn_vehicles: int = 8
-    expert_transitions: int = 100_000
+    policy_freq: int = 1
+    duration_s: int = 12
+    lanes: int = 3
+    spawn_vehicles: int = 4
+    expert_transitions: int = 4_000
     expert_seed_start: int = 0
     val_count: int = 40
     test_count: int = 200
     curve_count: int = 8
-    bc_epochs: int = 12
-    bc_batch: int = 512
+    bc_epochs: int = 8
+    bc_batch: int = 256
     bc_lr: float = 1e-3
-    bc_patience: int = 4
-    ppo_timesteps: int = 4096
-    ppo_n_steps: int = 512
-    ppo_batch: int = 128
+    bc_patience: int = 3
+    ppo_timesteps: int = 2048
+    ppo_n_steps: int = 256
+    ppo_batch: int = 64
     ppo_epochs: int = 4
     ppo_lr: float = 3e-4
     ppo_lr_bc: float = 1e-4
@@ -71,9 +73,9 @@ class Settings:
     ppo_ent_bc: float = 0.0
     ppo_clip: float = 0.2
     ppo_clip_bc: float = 0.1
-    curve_every: int = 2048
+    curve_every: int = 512
     gif_count: int = 3
-    features_dim: int = 64
+    features_dim: int = 32
     attn_heads: int = 4
 
     def __post_init__(self) -> None:
@@ -180,6 +182,7 @@ class Settings:
             "expert_seed_start": self.expert_seed_start,
             "brake_accel": BRAKE_ACCEL,
             "accel_accel": ACCEL_ACCEL,
+            "speed_step": SPEED_STEP,
             "idm_delta": 4.0,
             "quick": self.quick,
         }
@@ -196,7 +199,7 @@ class Settings:
             "bc_batch": self.bc_batch,
             "bc_lr": self.bc_lr,
             "bc_patience": self.bc_patience,
-            "bc_loss": "sqrt_moderate3_rare8",
+            "bc_loss": "lane_change_sqrt_cap2.5",
             "ppo_timesteps": self.ppo_timesteps,
             "ppo_n_steps": self.ppo_n_steps,
             "ppo_batch": self.ppo_batch,
@@ -216,19 +219,19 @@ def make_settings(quick: bool, device: str) -> Settings:
         return Settings(
             quick=True,
             device=device,
-            duration_s=8,
-            expert_transitions=200,
+            duration_s=6,
+            expert_transitions=80,
             val_count=2,
             test_count=2,
             curve_count=2,
             bc_epochs=2,
-            bc_batch=64,
+            bc_batch=32,
             bc_patience=1,
-            ppo_timesteps=256,
-            ppo_n_steps=128,
-            ppo_batch=64,
+            ppo_timesteps=128,
+            ppo_n_steps=64,
+            ppo_batch=32,
             ppo_epochs=2,
-            curve_every=256,
+            curve_every=128,
             gif_count=1,
         )
     return Settings(quick=False, device=device)

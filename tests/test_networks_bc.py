@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from src.bc import predict_actions, train_bc
+from src.bc import action_class_weights, predict_actions, train_bc
 from src.config import make_settings
 from src.networks import EgoAttentionEncoder, MLPEncoder, build_policy
 
@@ -32,6 +32,15 @@ def test_attention_ignores_padding_and_permutes_other_vehicles():
     flat.eval()
     # The MLP sees vehicle order, so this check only locks the output shape.
     assert flat(obs).shape == (2, 64)
+
+
+def test_class_weights_do_not_boost_braking():
+    actions = np.array([4, 4, 4, 4, 1, 1, 0], dtype=np.int64)
+    weights = action_class_weights(actions)
+    assert weights[4] == weights[1]
+    assert weights[0] > weights[4]
+    assert weights[2] == 0.0
+    assert weights[3] == 0.0
 
 
 def test_bc_overfits_a_linear_rule_and_early_stops_when_frozen():

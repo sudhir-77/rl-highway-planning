@@ -52,6 +52,28 @@ def _loss(
     return float(total / max(count, 1))
 
 
+def action_class_weights(actions: np.ndarray, n_actions: int = 5) -> np.ndarray:
+    """Weight rare lane-change labels only.
+
+    Braking is not upweighted. A large SLOWER weight made the cloned policy
+    brake on ordinary gaps and fall behind the expert's speed.
+    """
+    counts = np.bincount(np.asarray(actions, dtype=np.int64), minlength=n_actions).astype(np.float64)
+    weights = np.zeros(n_actions, dtype=np.float64)
+    present = counts > 0
+    weights[present] = 1.0
+    total = float(counts.sum())
+    for lane in (0, 2):
+        if counts[lane] <= 0 or total <= 0:
+            continue
+        fraction = float(counts[lane] / total)
+        if fraction < 0.15:
+            weights[lane] = min(2.5, float(np.sqrt(1.0 / max(fraction, 1e-6))))
+    if present.any():
+        weights[present] = weights[present] / weights[present].mean()
+    return weights
+
+
 def train_bc(
     model: BCPolicy,
     observations: np.ndarray,
@@ -76,25 +98,11 @@ def train_bc(
     act = torch.from_numpy(np.ascontiguousarray(actions, dtype=np.int64))
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    # Braking is about 10% of highway labels and lane changes are under 2%.
-    # Square-root weights give those classes a larger share of the loss.
-    # The cap is lower for the common rare class so the policy does not
-    # brake on every close gap. Unseen actions get weight 0.
-    train_actions = np.asarray(actions)[train_idx]
-    counts = np.bincount(train_actions, minlength=5).astype(np.float64)
-    total = float(counts.sum())
-    fraction = counts / max(total, 1.0)
-    raw_weights = np.ones(5, dtype=np.float64)
-    present = counts > 0
-    moderate = present & (fraction < 0.15)
-    raw_weights[moderate] = np.sqrt(1.0 / np.maximum(fraction[moderate], 1e-6))
-    raw_weights[moderate] = np.clip(raw_weights[moderate], 1.0, 3.0)
-    very_rare = present & (fraction < 0.02)
-    raw_weights[very_rare] = np.clip(np.sqrt(1.0 / np.maximum(fraction[very_rare], 1e-6)), 1.0, 8.0)
-    raw_weights[~present] = 0.0
-    if present.any():
-        raw_weights[present] = raw_weights[present] / raw_weights[present].mean()
-    class_weights = torch.tensor(raw_weights, dtype=torch.float32, device=device)
+    class_weights = torch.tensor(
+        action_class_weights(np.asarray(actions)[train_idx]),
+        dtype=torch.float32,
+        device=device,
+    )
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     best = float("inf")
     wait = 0

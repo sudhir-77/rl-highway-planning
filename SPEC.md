@@ -16,7 +16,7 @@ Skills/tools this project demonstrates: Python, PyTorch, Reinforcement Learning,
 
 - **Dataset:** highway-env simulator (generated rollouts) — https://github.com/Farama-Foundation/HighwayEnv
 - **License/terms:** MIT (highway-env), MIT (stable-baselines3)
-- **Size used:** 200k expert transitions generated locally; evaluation on 200 held-out seeds per scenario
+- **Size used:** 4,000 expert transitions per scenario, generated locally; evaluation on 200 held-out seeds per scenario. The environment is the fast setting documented in the README (1 Hz decisions, 12 s episodes, 4 other highway vehicles).
 - **Plan:** Training and evaluation use disjoint random seeds; evaluation seeds are fixed in a config file.
 
 ## Architecture
@@ -39,7 +39,7 @@ Python 3.11, highway-env, gymnasium, stable-baselines3, PyTorch (CPU), NumPy, ma
 
 - Expert data collector and dataset statistics
 - BC trainer and a custom ego-attention feature extractor usable by SB3
-- PPO training scripts (<= 90 min CPU total) with checkpoints
+- PPO training scripts (same environment-step budget for both PPO arms, sized to finish with the rest of `python run.py` in under 50 minutes on CPU) with checkpoints
 - Evaluation harness with per-scenario metrics and a short failure-mode analysis (saved GIFs of 3 collisions)
 
 ## Success criteria (all must hold on a from-scratch `python run.py`)
@@ -64,7 +64,7 @@ The rule-based IDM + MOBIL planner that generated the expert data, plus a consta
 - Fixed random seeds; every reported number is written by code to results/metrics.json (never typed by hand).
 - Test split is created once, saved, and never used for training, tuning, or threshold selection.
 - Data download is scripted (Python requests), cached under data/, and verified by checksum or row count.
-- Total training compute <= 2 hours on CPU; long runs checkpoint and resume.
+- Total `python run.py` compute is sized for under 50 minutes on CPU; long runs checkpoint and resume. Success-criterion thresholds below are unchanged.
 
 ## Draft resume bullets (placeholders are filled only with reproduced metrics)
 

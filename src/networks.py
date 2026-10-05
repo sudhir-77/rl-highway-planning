@@ -74,11 +74,9 @@ class MLPEncoder(nn.Module):
         self.n_features = n_features
         self.register_buffer("scale", _scale_buffer(n_features))
         self.net = nn.Sequential(
-            nn.Linear(n_vehicles * n_features + 6, 128),
+            nn.Linear(n_vehicles * n_features + 6, 64),
             nn.ReLU(),
-            nn.Linear(128, 128),
-            nn.ReLU(),
-            nn.Linear(128, features_dim),
+            nn.Linear(64, features_dim),
             nn.ReLU(),
         )
 

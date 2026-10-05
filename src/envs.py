@@ -12,7 +12,7 @@ import gymnasium as gym
 import highway_env
 import numpy as np
 
-from src.config import ENV_IDS, Settings
+from src.config import ENV_IDS, FASTER, IDLE, SLOWER, SPEED_STEP, Settings
 
 warnings.filterwarnings("ignore", message=".*out of date.*")
 gym.register_envs(highway_env)
@@ -34,7 +34,19 @@ class SyncSetpoint(gym.Wrapper):
 
     def step(self, action):
         self._sync()
+        action = int(np.asarray(action).reshape(-1)[0])
+        # One meta-action has to be able to brake. A single 1 m/s step cannot.
+        if action in (FASTER, SLOWER):
+            self._shift_speed(action)
+            action = IDLE
         return self.env.step(action)
+
+    def _shift_speed(self, action: int) -> None:
+        ego = self.env.unwrapped.vehicle
+        delta = SPEED_STEP if action == FASTER else -SPEED_STEP
+        limit = int(ego.target_speeds.size) - 1
+        ego.speed_index = int(np.clip(int(ego.speed_index) + delta, 0, limit))
+        ego.target_speed = float(ego.index_to_speed(ego.speed_index))
 
     def _sync(self) -> None:
         ego = self.env.unwrapped.vehicle

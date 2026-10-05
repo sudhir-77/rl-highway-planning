@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.config import IDLE, FASTER, LANE_LEFT, LANE_RIGHT, SLOWER, make_settings
+from src.config import IDLE, FASTER, LANE_LEFT, LANE_RIGHT, SLOWER, SPEED_STEP, make_settings
 from src.dataset import DatasetError, file_sha256, load_dataset, save_dataset
 from src.envs import make_env
 from src.evaluate import recent_lane_changes, run_episode
@@ -75,6 +75,45 @@ def test_idle_holds_measured_speed_not_a_stale_setpoint():
         assert abs(float(ego.target_speed) - expected) < 1e-5
     finally:
         env.close()
+
+
+def test_slower_drops_the_setpoint_by_one_speed_step():
+    settings = make_settings(True, "cpu")
+    env = make_env("highway", settings)
+    try:
+        env.reset(seed=0)
+        ego = env.unwrapped.vehicle
+        ego.speed = 20.0
+        env.step(IDLE)
+        held = float(ego.target_speed)
+        env.step(SLOWER)
+        assert abs((held - float(ego.target_speed)) - SPEED_STEP) < 1e-5
+    finally:
+        env.close()
+
+
+def test_expert_changes_lanes_on_highway_and_merge():
+    settings = make_settings(True, "cpu")
+    for scenario in ("highway", "merge"):
+        env = make_env(scenario, settings)
+        lane_actions = 0
+        try:
+            for seed in range(12):
+                env.reset(seed=seed)
+                done = False
+                steps = 0
+                while not done and steps < settings.max_episode_steps:
+                    action = expert_action(env, enable_lane_change=True)
+                    available = {int(item) for item in env.unwrapped.action_type.get_available_actions()}
+                    assert action in available
+                    if action in (LANE_LEFT, LANE_RIGHT):
+                        lane_actions += 1
+                    _obs, _reward, terminated, truncated, _info = env.step(action)
+                    done = bool(terminated or truncated)
+                    steps += 1
+        finally:
+            env.close()
+        assert lane_actions >= 1, scenario
 
 
 def test_merge_observation_shape():

@@ -90,6 +90,14 @@ def results_markdown(payload: dict) -> str:
         lines.append(
             f"| {row['name']} | {row['value']:.4f} | {row['op']} {threshold} | {row['passed']} |"
         )
+    failed = [row["name"] for row in payload["success_criteria"] if not row["passed"]]
+    if failed:
+        lines.append("")
+        lines.append(
+            "These criteria did not pass on the from-scratch run: "
+            + "; ".join(failed)
+            + ". The values above are the measured ones. Thresholds were not changed, and test seeds were not used to tune."
+        )
     lines.append("")
     lines.append("Held-out test metrics (time-weighted mean speed, collision percent):")
     lines.append("")
