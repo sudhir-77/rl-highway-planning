@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+PROJECT_SLUG = "rl-highway-planning"
+
 FEATURES = ["presence", "x", "y", "vx", "vy"]
 # 1 m/s grid so IDLE can hold the measured speed. FASTER and SLOWER move
 # several steps at once; a 1 m/s command cannot match an IDM brake.
@@ -49,6 +51,7 @@ class Settings:
     n_obs_vehicles: int = 8
     n_features: int = 9
     # 5 Hz physics, 1 Hz decisions. Both PPO arms share ppo_timesteps.
+    # Rollouts use ppo_n_envs processes so the step budget stays on CPU.
     sim_freq: int = 5
     policy_freq: int = 1
     duration_s: int = 12
@@ -63,9 +66,10 @@ class Settings:
     bc_batch: int = 256
     bc_lr: float = 1e-2
     bc_patience: int = 6
-    ppo_timesteps: int = 2048
+    ppo_timesteps: int = 50_176
+    ppo_n_envs: int = 4
     ppo_n_steps: int = 256
-    ppo_batch: int = 64
+    ppo_batch: int = 256
     ppo_epochs: int = 4
     ppo_lr: float = 3e-4
     ppo_lr_bc: float = 1e-4
@@ -73,18 +77,19 @@ class Settings:
     ppo_ent_bc: float = 0.0
     ppo_clip: float = 0.2
     ppo_clip_bc: float = 0.1
-    curve_every: int = 512
+    curve_every: int = 4_096
     gif_count: int = 3
     features_dim: int = 32
     attn_heads: int = 4
 
     def __post_init__(self) -> None:
-        if self.ppo_timesteps % self.ppo_n_steps != 0:
-            raise ValueError("ppo_timesteps must be a multiple of ppo_n_steps")
-        if self.curve_every % self.ppo_n_steps != 0:
-            raise ValueError("curve_every must be a multiple of ppo_n_steps")
-        if self.ppo_n_steps % self.ppo_batch != 0:
-            raise ValueError("ppo_n_steps must be a multiple of ppo_batch")
+        rollout = self.ppo_n_steps * self.ppo_n_envs
+        if rollout % self.ppo_batch != 0:
+            raise ValueError("ppo rollout (n_steps * n_envs) must be a multiple of ppo_batch")
+        if self.ppo_timesteps % rollout != 0:
+            raise ValueError("ppo_timesteps must be a multiple of n_steps * n_envs")
+        if self.curve_every % rollout != 0:
+            raise ValueError("curve_every must be a multiple of n_steps * n_envs")
         # One-step episodes would consume one seed per transition. That block
         # must end before the lowest reserved seed for the scenario.
         for scenario in SCENARIOS:
@@ -201,6 +206,7 @@ class Settings:
             "bc_patience": self.bc_patience,
             "bc_loss": "rare_sqrt_cap2",
             "ppo_timesteps": self.ppo_timesteps,
+            "ppo_n_envs": self.ppo_n_envs,
             "ppo_n_steps": self.ppo_n_steps,
             "ppo_batch": self.ppo_batch,
             "ppo_epochs": self.ppo_epochs,
@@ -228,6 +234,7 @@ def make_settings(quick: bool, device: str) -> Settings:
             bc_batch=32,
             bc_patience=1,
             ppo_timesteps=128,
+            ppo_n_envs=1,
             ppo_n_steps=64,
             ppo_batch=32,
             ppo_epochs=2,

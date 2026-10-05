@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import numpy as np
 import torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
 from torch import nn
 
 from src.config import Settings
@@ -58,13 +59,40 @@ def copy_bc_to_ppo(model: PPO, bc_policy: BCPolicy) -> None:
     model.policy.set_training_mode(False)
 
 
-def _vec_env(scenario: str, settings: Settings, seed: int) -> DummyVecEnv:
+def _dummy_env(scenario: str, settings: Settings, seed: int) -> DummyVecEnv:
     def _init():
         env = make_env(scenario, settings, render=False)
         env.reset(seed=seed)
         return env
 
     return DummyVecEnv([_init])
+
+
+def _subprocess_env(scenario: str, settings: Settings, seed: int, n_envs: int) -> SubprocVecEnv:
+    """Parallel env steps. Workers stay at one thread so four of them fit in memory."""
+
+    def _thunk(rank: int):
+        def _init():
+            os.environ["OMP_NUM_THREADS"] = "1"
+            os.environ["MKL_NUM_THREADS"] = "1"
+            os.environ["OPENBLAS_NUM_THREADS"] = "1"
+            os.environ["NUMEXPR_NUM_THREADS"] = "1"
+            os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
+            os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+            env = make_env(scenario, settings, render=False)
+            env.reset(seed=seed + rank)
+            return env
+
+        return _init
+
+    return SubprocVecEnv([_thunk(rank) for rank in range(n_envs)], start_method="spawn")
+
+
+def _vec_env(scenario: str, settings: Settings, seed: int, n_envs: int | None = None) -> VecEnv:
+    count = settings.ppo_n_envs if n_envs is None else n_envs
+    if count <= 1:
+        return _dummy_env(scenario, settings, seed)
+    return _subprocess_env(scenario, settings, seed, count)
 
 
 def build_ppo(
@@ -76,7 +104,7 @@ def build_ppo(
     learning_rate: float,
     ent_coef: float,
     clip_range: float,
-) -> tuple[PPO, DummyVecEnv]:
+) -> tuple[PPO, VecEnv]:
     env = _vec_env(scenario, settings, seed)
     kwargs = {
         "features_extractor_class": extractor_class(arch),
@@ -189,8 +217,13 @@ def train_ppo(
             curve.append({"timestep": trained, "mean_return": value, "n_seeds": len(curve_seeds)})
             print(f"[{scenario}] PPO {arch}/{init} step {trained} return {value:.3f}", flush=True)
         checkpoint.parent.mkdir(parents=True, exist_ok=True)
+        if int(model.num_timesteps) < settings.ppo_timesteps:
+            raise RuntimeError(
+                f"PPO {scenario}/{arch}/{init} stopped at {model.num_timesteps} steps, "
+                f"below the budget of {settings.ppo_timesteps}"
+            )
         model.save(str(checkpoint))
-        meta = {"fingerprint": fingerprint, "curve": curve}
+        meta = {"fingerprint": fingerprint, "curve": curve, "num_timesteps": int(model.num_timesteps)}
         checkpoint.with_suffix(".json").write_text(json.dumps(meta), encoding="utf-8")
         curve_path.write_text(json.dumps(curve), encoding="utf-8")
         return curve
@@ -200,7 +233,7 @@ def train_ppo(
 
 def load_ppo(scenario: str, arch: str, settings: Settings, checkpoint: Path, seed: int) -> PPO:
     """Load a checkpoint for deterministic evaluation. Schedules are not resumed."""
-    env = _vec_env(scenario, settings, seed)
+    env = _vec_env(scenario, settings, seed, n_envs=1)
     model = PPO.load(
         str(checkpoint),
         env=env,

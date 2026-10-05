@@ -9,6 +9,7 @@ __pycache__/
 .coverage
 htmlcov/
 .cursor/
+EVALUATION_*.md
 mlruns/
 *.py[cod]
 *.egg-info/

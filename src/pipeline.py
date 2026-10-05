@@ -18,6 +18,7 @@ from src.config import (
     ALL_POLICIES,
     BASELINE_POLICIES,
     LEARNED_POLICIES,
+    PROJECT_SLUG,
     SCENARIOS,
     Settings,
     make_settings,
@@ -492,7 +493,7 @@ def run_pipeline(
             "n_test_seeds": int(settings.test_count),
         }
         payload = {
-            "project": "rl-highway-planning",
+            "project": PROJECT_SLUG,
             "success_criteria": criteria,
             "metrics": {
                 "selected_policy": selected,
@@ -509,6 +510,28 @@ def run_pipeline(
                 ],
                 "sample_efficiency_step_pct": step_detail,
                 "highway_attention_step_pct": step_pct,
+                "ppo_budget": {
+                    "timesteps_per_run": int(settings.ppo_timesteps),
+                    "n_envs": int(settings.ppo_n_envs),
+                    "n_steps": int(settings.ppo_n_steps),
+                    "policy_hz": int(settings.policy_freq),
+                    "simulation_hz": int(settings.sim_freq),
+                    "final_timesteps": {
+                        f"{scenario}/{arch}/{init}": max(
+                            (
+                                int(row["timestep"])
+                                for row in curve_rows
+                                if row["scenario"] == scenario
+                                and row["architecture"] == arch
+                                and row["init"] == init
+                            ),
+                            default=0,
+                        )
+                        for scenario in SCENARIOS
+                        for arch in ("mlp", "attention")
+                        for init in ("scratch", "bc")
+                    },
+                },
                 "speed_criterion": {
                     "speed_pct_of_expert": speed_pct,
                     "learned_collision_pct": highway_best["collision_pct"],

@@ -16,7 +16,7 @@ Skills/tools this project demonstrates: Python, PyTorch, Reinforcement Learning,
 
 - **Dataset:** highway-env simulator (generated rollouts) — https://github.com/Farama-Foundation/HighwayEnv
 - **License/terms:** MIT (highway-env), MIT (stable-baselines3)
-- **Size used:** 4,000 expert transitions per scenario, generated locally; evaluation on 200 held-out seeds per scenario. The environment is the fast setting documented in the README (1 Hz decisions, 12 s episodes, 4 other highway vehicles).
+- **Size used:** 4,000 expert transitions per scenario, generated locally; evaluation on 200 held-out seeds per scenario. The environment is the fast setting documented in the README (1 Hz decisions, 12 s episodes, 4 other highway vehicles). Each PPO run uses at least 50,000 environment steps.
 - **Plan:** Training and evaluation use disjoint random seeds; evaluation seeds are fixed in a config file.
 
 ## Architecture
